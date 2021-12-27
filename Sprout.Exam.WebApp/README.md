@@ -8,5 +8,4 @@ improvement that you will prioritize next? This can be a feature, a tech debt, o
 an architectural design._
 
 ##### Answer:
-_If this app gets deployed in production, the next improvements I can think of is to developer a usermanager 
-and especially a page wherein you can configure the different employee tpyes_
+_If this app gets deployed in production, the next improvements I can think of is to develope a user manager and also a page wherein the different employee types (calculations and etc.) can be configured_
