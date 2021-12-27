@@ -1,0 +1,159 @@
+import React, { Component } from 'react';
+import authService from '../../components/api-authorization/AuthorizeService';
+
+export class EmployeeCalculate extends Component {
+  static displayName = EmployeeCalculate.name;
+
+  constructor(props) {
+    super(props);
+      this.state = { id: 0, fullName: '', birthdate: '', tin: '', typeId: 1, typeName: '', rateMultiply: '0',netIncome: '', salary: 0, tax: 0, isMonthly: true, isDaily: true, isHourly: true, loading: true,loadingCalculate:false };
+  }
+
+  componentDidMount() {
+    this.getEmployee(this.props.match.params.id);
+  }
+
+  handleChange(event) {
+    this.setState({ [event.target.name] : event.target.value});
+  }
+
+  handleSubmit(e){
+      e.preventDefault();
+      if (this.state.rateMultiply >= 0 && this.state.rateMultiply != '') {
+          this.calculateSalary();
+      } else {
+          alert("Inputted value is invalid. Only positive numbers are accepted");
+      }
+  }
+
+  render() {
+
+    let contents = this.state.loading
+    ? <p><em>Loading...</em></p>
+    : <div>
+    <form>
+<div className='form-row'>
+<div className='form-group col-md-12'>
+  <label>Full Name: <b>{this.state.fullName}</b></label>
+</div>
+
+</div>
+
+<div className='form-row'>
+<div className='form-group col-md-12'>
+  <label >Birthdate: <b>{this.state.birthdate}</b></label>
+</div>
+</div>
+
+<div className="form-row">
+<div className='form-group col-md-12'>
+  <label>TIN: <b>{this.state.tin}</b></label>
+</div>
+</div>
+
+<div className="form-row">
+<div className='form-group col-md-12'>
+  <label>Employee Type: <b>{this.state.typeName}</b></label>
+</div>
+</div>
+
+  {this.state.isMonthly ?
+      <div className="form-row">
+          <div className='form-group col-md-12'><label>Monthly Salary: <b>{ parseFloat(this.state.salary).toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") }</b> </label></div>
+          <div className='form-group col-md-12'><label>Tax: <b>{ parseFloat(this.state.tax) }%</b> </label></div>
+      </div> : "" 
+  }
+
+  {this.state.isDaily ? 
+     <div className="form-row">
+        <div className='form-group col-md-12'><label>Rate Per Day: <b>{ parseFloat(this.state.salary).toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") }</b> </label></div>
+        <div className='form-group col-md-12'><label>Tax: <b>{ parseFloat(this.state.tax) }%</b> </label></div>
+     </div> : "" 
+  } 
+
+  {this.state.isHourly ? 
+     <div className="form-row">
+        <div className='form-group col-md-12'><label>Rate Per Hour: <b>{ parseFloat(this.state.salary).toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") }</b> </label></div>
+        <div className='form-group col-md-12'><label>Tax: <b>{ parseFloat(this.state.tax) }%</b> </label></div>
+     </div> : "" 
+  } 
+
+                
+  {this.state.isMonthly ?
+    <div className="form-row">
+        <div className='form-group col-md-6'>
+            <label htmlFor='inputRateMultiple'>Absent Days: </label>
+            <input type='number' className='form-control' id='inputRateMultiple' onChange={this.handleChange.bind(this)} value={this.state.rateMultiply} name="rateMultiply" placeholder="Absent Days" />
+        </div>
+    </div> : "" 
+  }
+
+  {this.state.isDaily ? 
+    <div className="form-row">
+        <div className='form-group col-md-6'>
+            <label htmlFor='inputRateMultiple'>Worked Days: </label>
+            <input type='number' className='form-control' id='inputRateMultiple' onChange={this.handleChange.bind(this)} value={this.state.rateMultiply} name="rateMultiply" placeholder="Worked Days" />
+        </div>
+    </div> : "" 
+  } 
+
+  {this.state.isHourly ? 
+    <div className="form-row">
+        <div className='form-group col-md-6'>
+            <label htmlFor='inputRateMultiple'>Hours Worked: </label>
+            <input type='number' className='form-control' id='inputRateMultiple' onChange={this.handleChange.bind(this)} value={this.state.rateMultiply} name="rateMultiply" placeholder="Hours Worked" />
+        </div>
+    </div> : "" 
+  } 
+
+<div className="form-row">
+<div className='form-group col-md-12'>
+  <label>Net Income: <b>{this.state.netIncome}</b></label>
+</div>
+</div>
+
+<button type="submit" onClick={this.handleSubmit.bind(this)} disabled={this.state.loadingCalculate} className="btn btn-primary mr-2">{this.state.loadingCalculate?"Loading...": "Calculate"}</button>
+<button type="button" onClick={() => this.props.history.push("/employees/index")} className="btn btn-primary">Back</button>
+</form>
+</div>;
+
+
+    return (
+        <div>
+        <h1 id="tabelLabel" >Employee Calculate Salary</h1>
+        <br/>
+        {contents}
+      </div>
+    );
+  }
+
+  async calculateSalary() {
+    this.setState({ loadingCalculate: true });
+    const token = await authService.getAccessToken();
+    const requestOptions = {
+        method: 'POST',
+        headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.state)
+    };
+    const response = await fetch('api/employees/' + this.state.id + '/calculate',requestOptions);
+    const data = await response.json();
+      this.setState({ loadingCalculate: false, netIncome: data.toLocaleString(undefined, { minimumFractionDigits: 2 }) });
+  }
+
+  async getEmployee(id) {
+    this.setState({ loading: true,loadingCalculate: false });
+    const token = await authService.getAccessToken();
+    const response = await fetch('api/employees/' + id, {
+      headers: !token ? {} : { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(response.status === 200){
+        const data = await response.json();
+        this.setState({ id: data.id, fullName: data.fullName, birthdate: data.birthdate, tin: data.tin, typeId: data.typeId, typeName: data.typeName, salary: data.salary, tax: data.tax, isMonthly: data.isMonthly, isDaily: data.isDaily, isHourly: data.isHourly, loading: false, loadingCalculate: false });
+    }
+    else{
+        alert("There was an error occured.");
+        this.setState({ loading: false,loadingCalculate: false });
+    }
+  }
+}
